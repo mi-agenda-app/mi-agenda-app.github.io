@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <style>
 :root{
-  --text:#1b1530; --sub:rgba(40,30,70,.62); --faint:rgba(40,30,70,.38);
+  --tour:#ffffff; --text:#1b1530; --sub:rgba(40,30,70,.62); --faint:rgba(40,30,70,.38);
   --glass:rgba(255,255,255,.34); --glass-strong:rgba(255,255,255,.55);
   --stroke:rgba(255,255,255,.75); --stroke-soft:rgba(255,255,255,.35);
   --shadow:0 18px 40px rgba(60,30,120,.14), 0 2px 8px rgba(60,30,120,.06);
@@ -30,7 +30,7 @@
   --blob1:#c7b4ff; --blob2:#ffb8cf; --blob3:#9fe0ff;
 }
 @media (prefers-color-scheme:dark){:root{
-  --text:#f4f1ff; --sub:rgba(235,228,255,.66); --faint:rgba(235,228,255,.38);
+  --tour:#251e40; --text:#f4f1ff; --sub:rgba(235,228,255,.66); --faint:rgba(235,228,255,.38);
   --glass:rgba(40,32,70,.42); --glass-strong:rgba(60,50,100,.55);
   --stroke:rgba(255,255,255,.22); --stroke-soft:rgba(255,255,255,.1);
   --shadow:0 18px 40px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.25);
@@ -275,6 +275,19 @@ input[type=date],input[type=time],input[type=text],input[type=number]{width:100%
 .cc .hn{font-weight:450!important}
 .cwd,label.f,.bed .d{font-weight:600}
 .hint b{font-weight:600}
+
+/* Práctica guiada */
+.tour-spot{position:fixed;z-index:9000;border-radius:18px;pointer-events:none;box-shadow:0 0 0 200vmax rgba(18,10,40,.58);transition:left .3s,top .3s,width .3s,height .3s}
+.tour-spot.tap::after{content:"";position:absolute;inset:-5px;border-radius:22px;border:2.5px solid var(--accent);animation:tourPulse 1.4s ease-out infinite}
+@keyframes tourPulse{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}
+.tour-bub{position:fixed;z-index:9001;left:14px;right:14px;max-width:460px;margin:0 auto;background:var(--tour);color:var(--text);border-radius:22px;padding:16px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.28);transition:top .3s,bottom .3s}
+.tour-bub .tn{font-size:12.5px;color:var(--sub);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.tour-bub .tn button{border:0;background:none;color:var(--sub);font:inherit;font-size:13.5px;padding:4px 0 4px 10px;cursor:pointer}
+.tour-bub h4{margin:6px 0 2px;font-size:19px;font-weight:600}
+.tour-bub p{margin:6px 0 0;font-size:16.5px;line-height:1.42}
+.tour-bub .tgo{margin-top:12px;width:100%;height:46px;border:0;border-radius:15px;background:var(--accent);color:#fff;font:inherit;font-size:16.5px;font-weight:600;cursor:pointer}
+.tour-bub .thint{margin-top:10px;font-size:14.5px;font-weight:600;color:var(--accent)}
+.tour-bar{display:block;width:fit-content;margin:calc(env(safe-area-inset-top) + 4px) auto 6px;padding:5px 14px;border-radius:99px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -297,11 +310,11 @@ const T = window.TL;
 const KEY = 'tahara.v1';
 
 // ---------------- Estado ----------------
-let S;
+let S, TOUR = null;
 try { S = JSON.parse(localStorage.getItem(KEY)) || null; } catch(e) { S = null; }
 if (!S) S = { cycles: [], settings: {} };
 S.settings = Object.assign({}, T.DEFAULTS, S.settings);
-function store(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+function store(){ if (TOUR) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 function save(){ store(); if (typeof queueSync === 'function') queueSync(); }
 
 function sorted(){ return S.cycles.slice().sort((a,b)=> a.onset < b.onset ? -1 : 1); }
@@ -373,6 +386,7 @@ function viewHoy(){
       <p>Registrá cuándo empezó el período y la app calcula el hefsek tahará, la shivá nekiím, la noche de mikve y las onot perishá, con fecha hebrea y gregoriana.</p>
     </div>
     <button class="btn primary" data-act="new">${ICON.plus} Registrar inicio del período</button>
+    ${TOUR ? '' : `<button class="btn glass" data-act="tour">Ver cómo se usa · práctica guiada</button>`}
     <div class="privacy" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.</span></div>`;
     return h;
   }
@@ -609,11 +623,11 @@ const app = document.getElementById('app');
 function render(){
   const t = T.today();
   const titles = {hoy:'Mi Agenda', cal:'Calendario', hist:'Historial', notif:'Notificaciones', ajustes:'Ajustes'};
-  app.innerHTML = `<header class="top"><div><h1>${titles[tab]}</h1>
+  app.innerHTML = (TOUR ? '<div class="tour-bar">Modo práctica · no se guarda</div>' : '') + `<header class="top"><div><h1>${titles[tab]}</h1>
     <div class="date"><b>${fLong(t)}</b><br>${T.hebLabel(t)} · <span class="he">${hebHe(t)}</span></div>
     ${tab === 'hoy' || tab === 'cal' ? `<div class="suntimes"><span class="st-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 6.5 12 4l2.5 2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Amanecer <b>${amanecer(t)}</b></span><span class="st-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 5.5 12 8l2.5-2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Shekiá <b>${shkia(t)}</b></span></div>` : ''}</div></header>` +
     (tab==='hoy' ? viewHoy() : tab==='cal' ? viewCal() : tab==='notif' ? viewNotif() : tab==='ajustes' ? viewAjustes() : viewHist()) +
-    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? '<div style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px">versión 35</div>' : '') +
+    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? '<div style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px">versión 36</div>' : '') +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint)">Cálculos orientativos. Ante cualquier duda, consultá con tu rav.</p>` +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint);line-height:1.6">Leiluy Nishmat:</p>` +
     `<div class="hint" style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin:2px 10px 0;font-size:12px;color:var(--faint);line-height:1.6;text-align:center">
@@ -750,6 +764,7 @@ function sheetHefsek(){
     upd(); inp.oninput = upd;
     root.querySelector('#fCancel').onclick = () => closeSheet();
     root.querySelector('#fSave').onclick = () => { if (!inp.value) return; c.hefsek = inp.value; c.bedikot = {}; save(); render();
+      if (TOUR) { closeSheet(); toast('Hefsek registrado'); return; }
       if (pushOn() && S.settings.pushBedika) { closeSheet(); toast('Hefsek registrado · avisos programados'); syncPush(true); }
       else { toast('Hefsek registrado'); sheetAlarms(c); } };
   });
@@ -878,9 +893,9 @@ function planItems(){
   return out.sort((a, b) => a.at - b.at).slice(0, 80);
 }
 let syncTimer = null, syncing = false;
-function queueSync(){ if (!S.push || !S.push.id) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncPush(false), 900); }
+function queueSync(){ if (TOUR || !S.push || !S.push.id) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncPush(false), 900); }
 async function syncPush(force){
-  if (!pushOn() || syncing) return;
+  if (TOUR || !pushOn() || syncing) return;
   const items = planItems(), hash = JSON.stringify(items);
   if (!force && hash === S.pushHash) return;
   syncing = true;
@@ -1064,6 +1079,7 @@ function wireNotif(root){
 function viewAjustes(){
   const st = S.settings;
   return `<div class="fade">
+    <button class="btn glass" data-act="tour" style="margin:0 0 16px">Cómo se usa la app · práctica guiada</button>
     <p class="lead" style="margin:0 4px 4px;color:var(--sub)">Definilos con tu rav según el minhag que siguen.</p>
     <label class="f">Días mínimos hasta el hefsek</label>
     <div class="seg" data-seg="min">${[4,5,6,7].map(n=>`<button data-v="${n}" class="${st.minDays==n?'on':''}">${n}</button>`).join('')}</div>
@@ -1127,6 +1143,7 @@ app.onclick = e => {
   const act = el.dataset.act, cy = sorted(), last = cy[cy.length-1];
   const byId = id => S.cycles.find(c => String(c.id) === String(id));
   switch (act){
+    case 'tour': startTour(); break;
     case 'new': sheetCycle(); break;
     case 'edit': sheetCycle(byId(el.dataset.id)); break;
     case 'del': sheetConfirm('¿Borrar este período?', 'Borrar período', () => { S.cycles = S.cycles.filter(c => String(c.id) !== el.dataset.id); save(); toast('Período borrado'); }); break;
@@ -1149,6 +1166,117 @@ app.onclick = e => {
 // Hora visible de los campos de hora
 document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('tin')) { const v = t.parentNode.querySelector('.tval'); if (v) v.textContent = t.value || '--:--'; } });
 document.addEventListener('change', e => { const t = e.target; if (t.classList && t.classList.contains('tin')) { const v = t.parentNode.querySelector('.tval'); if (v) v.textContent = t.value || '--:--'; } });
+
+
+// ---------------- Práctica guiada ----------------
+// Un ejemplo paso a paso con datos de mentira: no toca los datos reales ni el servidor de avisos.
+const $ = sel => typeof sel === 'function' ? sel() : document.querySelector(sel);
+const secCard = title => () => { const t = [...document.querySelectorAll('.sec-title')].find(e => e.textContent.trim().startsWith(title)); return t && t.nextElementSibling; };
+const lastCycle = () => sorted().slice(-1)[0];
+const setDay = d => { window.__TL_TODAY = d; selDay = d; calAnchor = d; };
+const TOUR_STEPS = [
+  { title: 'Práctica guiada', text: 'Te muestro paso a paso cómo se usa, con un ejemplo. Nada de lo que hagas acá se guarda: tus datos reales no se tocan.', btn: 'Empezar' },
+  { sel: '[data-act="new"]', text: 'Cuando te viene el período, tocá este botón.', tap: true },
+  { sel: () => { const i = $('.sheet #fOnset'); return i && i.parentNode.parentNode; }, free: true, text: 'Acá ponés el día y la hora en que vino. Si querés, probá cambiar la hora.' },
+  { sel: '.sheet [data-seg="onah"]', text: 'Con la hora, la app decide sola si fue de día o de noche, según el amanecer y la shekiá. Abajo te explica por qué.' },
+  { sel: '.sheet #fSave', text: 'Tocá “Guardar”.', tap: true },
+  { sel: '.hero', text: 'Esta es la pantalla de Hoy. Arriba ves en qué día estás.' },
+  { sel: secCard('Próximo paso'), text: 'La app te dice desde qué día se puede hacer el hefsek tahará y hasta qué hora (la shekiá).' },
+  { title: 'Pasan unos días…', text: 'Imaginemos que ya llegó el día del hefsek tahará.', btn: 'Seguir', go: () => { const c = lastCycle(); if (c) setDay(T.cycleInfo(c, S.settings).earliestHefsek); } },
+  { sel: '[data-act="hefsek"]', text: 'Cuando hiciste el hefsek, tocá este botón.', tap: true },
+  { sel: '.sheet #fSave', text: 'Confirmá la fecha. La app calcula sola la shivá nekiím y la noche de mikve.', tap: true },
+  { title: 'Al día siguiente…', text: 'Empieza la shivá nekiím.', btn: 'Seguir', go: () => { const c = lastCycle(); if (c && c.hefsek) setDay(T.add(c.hefsek, 1)); } },
+  { sel: '[data-act="bed"][data-k="1m"]', text: 'Cada día marcás la bedika de la mañana y la de la tarde. Tocá “Mañana” del día 1.', tap: true },
+  { sel: '[data-act="alarms"]', text: 'Desde este botón se programan los avisos de las bedikot, para no olvidarte ninguna.' },
+  { sel: secCard('Mikve'), text: 'Y acá te dice qué noche es la mikve.' },
+  { title: 'Llega el día 7…', text: 'Hoy a la noche es la mikve.', btn: 'Seguir', go: () => { const c = lastCycle(); if (c && c.hefsek) setDay(T.add(c.hefsek, 7)); } },
+  { sel: '[data-act="mikveDone"]', text: 'Después de ir a la mikve, tocá este botón.', tap: true },
+  { sel: secCard('Onot perishá'), text: 'Ahora la app te muestra las onot perishá: qué día toca, si es de día o de noche, y desde qué hora hasta qué hora.' },
+  { sel: '#tabs button[data-tab="cal"]', text: 'Abajo está el menú. Tocá el calendario.', tap: true },
+  { sel: '.calcard', text: 'Cada día está partido en dos: arriba el día y abajo la noche. Rojo: nidá. Verde: shivá nekiím. Azul: mikve. Amarillo: oná.' },
+  { sel: '[data-seg="calmode"]', text: 'Acá elegís ver el calendario gregoriano o el hebreo.' },
+  { sel: '#tabs button[data-tab="hist"]', text: 'Tocá el reloj: es el historial.', tap: true },
+  { sel: () => { const b = $('#app [data-act="edit"]'); return b && b.closest('.card'); }, text: 'Acá quedan todos tus períodos. Si te equivocaste en una fecha, la corregís con “Editar”.' },
+  { sel: '#tabs button[data-tab="notif"]', text: 'Tocá la campanita: son los avisos.', tap: true },
+  { title: 'Avisos', text: 'En esta pantalla activás los avisos de bedikot y de onot, y elegís el texto que aparece en el teléfono. Puede ser algo discreto, como “Recordatorio”.', btn: 'Seguir' },
+  { sel: '#tabs button[data-tab="ajustes"]', text: 'Tocá el engranaje: son los ajustes.', tap: true },
+  { title: 'Ajustes', text: 'Acá elegís tu ciudad (para la hora de la shekiá), lo que te indicó el rav y podés guardar una copia de tus datos.', btn: 'Seguir' },
+  { title: '¡Listo!', text: 'Ya sabés usarla. Ahora vuelve tu app como estaba, para cargar tus datos reales. Esta práctica la podés repetir cuando quieras desde Ajustes.', btn: 'Terminar', go: () => endTour() },
+];
+let tourEls = null, tourI = 0, tourRaf = 0, tourBusy = false;
+function startTour(){
+  if (TOUR) return;
+  closeSheet(true);
+  TOUR = { real: S, tab, selDay, calAnchor };
+  S = { cycles: [], settings: Object.assign({}, S.settings, { pushBedika: false, pushOna: false }) };
+  setDay(T.iso(new Date())); tab = 'hoy'; render(); window.scrollTo(0, 0);
+  const spot = document.createElement('div'); spot.className = 'tour-spot';
+  const bub = document.createElement('div'); bub.className = 'tour-bub';
+  document.body.append(spot, bub);
+  tourEls = { spot, bub }; tourI = 0;
+  document.addEventListener('click', tourGuard, true);
+  showStep();
+  const loop = () => { placeTour(); tourRaf = requestAnimationFrame(loop); }; loop();
+}
+function endTour(){
+  if (!TOUR) return;
+  cancelAnimationFrame(tourRaf);
+  document.removeEventListener('click', tourGuard, true);
+  tourEls.spot.remove(); tourEls.bub.remove(); tourEls = null;
+  closeSheet(true);
+  delete window.__TL_TODAY;
+  S = TOUR.real; tab = 'hoy'; selDay = T.today(); calAnchor = T.today(); TOUR = null;
+  render(); window.scrollTo(0, 0);
+}
+function showStep(){
+  const s = TOUR_STEPS[tourI], b = tourEls.bub, n = TOUR_STEPS.length;
+  b.innerHTML = `<div class="tn"><span>Paso ${tourI + 1} de ${n}</span><button data-tour="exit">Salir de la práctica</button></div>
+    ${s.title ? `<h4>${s.title}</h4>` : ''}<p>${s.text}</p>
+    ${s.tap ? '<div class="thint">👆 Tocá donde está marcado</div>' : `<button class="tgo" data-tour="next">${s.btn || 'Siguiente'}</button>`}`;
+  tourEls.spot.classList.toggle('tap', !!s.tap);
+  const el = s.sel && $(s.sel);
+  if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+function nextStep(){
+  const s = TOUR_STEPS[tourI];
+  if (s.go) { s.go(); if (!TOUR) return; render(); window.scrollTo(0, 0); }
+  tourI++;
+  if (tourI >= TOUR_STEPS.length) return endTour();
+  showStep();
+}
+function placeTour(){
+  if (!tourEls) return;
+  const s = TOUR_STEPS[tourI], el = s.sel && $(s.sel), { spot, bub } = tourEls;
+  const W = innerWidth, H = innerHeight, bh = bub.offsetHeight;
+  if (!el) {
+    Object.assign(spot.style, { left: W / 2 + 'px', top: H / 2 + 'px', width: '0px', height: '0px' });
+    bub.style.top = Math.max(20, (H - bh) / 2) + 'px'; bub.style.bottom = 'auto'; return;
+  }
+  const r = el.getBoundingClientRect(), p = 6;
+  Object.assign(spot.style, { left: r.left - p + 'px', top: r.top - p + 'px', width: r.width + 2 * p + 'px', height: r.height + 2 * p + 'px' });
+  const above = r.top - p - 14, below = H - r.bottom - p - 14 - 90;
+  let top;
+  if (below >= bh) top = r.bottom + p + 12;
+  else if (above >= bh) top = r.top - p - 12 - bh;
+  else top = Math.max(12, H - bh - 100);
+  bub.style.top = Math.round(top) + 'px'; bub.style.bottom = 'auto';
+}
+function tourGuard(e){
+  if (!tourEls) return;
+  const t = e.target;
+  if (tourEls.bub.contains(t)) {
+    const a = t.closest('[data-tour]'); if (!a) return;
+    e.preventDefault(); e.stopPropagation();
+    if (a.dataset.tour === 'exit') endTour(); else if (!tourBusy) nextStep();
+    return;
+  }
+  const s = TOUR_STEPS[tourI], el = s.sel && $(s.sel);
+  if (el && el.contains(t) && (s.tap || s.free)) {
+    if (s.tap && !tourBusy) { tourBusy = true; setTimeout(() => { tourBusy = false; if (TOUR) nextStep(); }, 520); }
+    return;
+  }
+  e.preventDefault(); e.stopPropagation();
+}
 
 // Swipe en el calendario
 let tx = null;

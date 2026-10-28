@@ -11,7 +11,7 @@
   function parse(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); }
   function add(s, n) { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); }
   function diff(a, b) { return Math.round((parse(a) - parse(b)) / 864e5); } // a - b en días
-  function today() { return iso(new Date()); }
+  function today() { return G.__TL_TODAY || iso(new Date()); }
 
   // ---------- Calendario hebreo ----------
   const MONTHS = {
