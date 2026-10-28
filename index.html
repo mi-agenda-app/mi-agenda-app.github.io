@@ -71,9 +71,10 @@ header.top{display:flex;align-items:flex-start;justify-content:space-between;mar
 .top h1{font-size:34px;font-weight:800;letter-spacing:-.6px;margin:0}
 .top .date{font-size:15px;color:var(--sub);margin-top:4px;line-height:1.35}
 .top .date b{color:var(--text);font-weight:600}
-input.tin{width:124px!important;min-width:124px;flex:0 0 124px;min-height:42px;padding:8px 10px!important;text-align:center;font-size:17px;font-variant-numeric:tabular-nums}
-input.tin::-webkit-date-and-time-value{text-align:center}
-input.tin::-webkit-calendar-picker-indicator{display:none}
+.tbox{position:relative;flex:0 0 88px;width:88px;height:42px;border-radius:14px;display:grid;place-items:center;overflow:hidden;cursor:pointer;
+  background:var(--glass);border:1px solid var(--stroke-soft);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.tbox .tval{font-size:17px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text);pointer-events:none}
+.tbox input.tin{position:absolute;inset:0;width:100%!important;height:100%!important;min-width:0!important;opacity:0;margin:0;padding:0;border:0;-webkit-appearance:none;appearance:none;cursor:pointer}
 .sw > div:first-child{flex:1;min-width:0}
 .privacy{display:flex;align-items:center;justify-content:center;gap:9px;max-width:420px;padding:12px 16px;border-radius:18px;background:var(--glass);border:1px solid var(--stroke-soft);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);color:var(--text);font-size:15.5px;font-weight:500;line-height:1.35;text-align:left}
 .privacy svg{width:22px;height:22px;flex:0 0 22px;color:var(--clean)}
@@ -999,7 +1000,7 @@ function viewNotif(){
     <div class="sec-title" id="secBed">Bedikot (shivá nekiím)</div>
     <div class="glass card" style="padding:2px 16px">
       ${pushOn() ? `<div class="sw"><div><b>Avisarme las bedikot</b><span>Se programan solas al registrar el hefsek</span></div><button class="toggle ${st.pushBedika?'on':''}" data-ptg="pushBedika"></button></div>` : ''}
-      <div class="sw"><div><b>Bedika de la mañana</b><span>Hora del aviso</span></div><input type="time" id="sMorning" class="tin" value="${st.morning}"></div>
+      <div class="sw"><div><b>Bedika de la mañana</b><span>Hora del aviso</span></div><label class="tbox"><span class="tval">${st.morning}</span><input type="time" id="sMorning" class="tin" value="${st.morning}" aria-label="Hora"></label></div>
       <div class="sw" style="flex-direction:column;align-items:stretch"><div><b>Bedika de la tarde</b><span>Minutos antes de la shekiá</span></div>
         <div class="seg" data-seg="before" style="margin-top:10px">${[10,15,20,30].map(n=>`<button data-v="${n}" class="${st.beforeShkia==n?'on':''}">${n} min</button>`).join('')}</div></div>
     </div>
@@ -1010,9 +1011,9 @@ function viewNotif(){
     <div class="glass card" style="padding:2px 16px">
       ${pushOn() ? `<div class="sw"><div><b>Avisarme las onot</b><span>Automático en todas, también en los próximos ciclos</span></div><button class="toggle ${st.pushOna?'on':''}" data-ptg="pushOna"></button></div>` : ''}
       <div class="sw"><div><b>El mismo día</b></div><div style="display:flex;gap:10px;align-items:center">
-        <input type="time" id="oSameT" class="tin" value="${st.onaSameTime}"><button class="toggle ${st.onaSame?'on':''}" id="oSame"></button></div></div>
+        <label class="tbox"><span class="tval">${st.onaSameTime}</span><input type="time" id="oSameT" class="tin" value="${st.onaSameTime}" aria-label="Hora"></label><button class="toggle ${st.onaSame?'on':''}" id="oSame"></button></div></div>
       <div class="sw"><div><b>El día anterior</b></div><div style="display:flex;gap:10px;align-items:center">
-        <input type="time" id="oPrevT" class="tin" value="${st.onaPrevTime}"><button class="toggle ${st.onaPrev?'on':''}" id="oPrev"></button></div></div>
+        <label class="tbox"><span class="tval">${st.onaPrevTime}</span><input type="time" id="oPrevT" class="tin" value="${st.onaPrevTime}" aria-label="Hora"></label><button class="toggle ${st.onaPrev?'on':''}" id="oPrev"></button></div></div>
     </div>
     <label class="f">Texto del aviso de oná</label>
     <input type="text" id="oMsg" maxlength="60" value="${esc(st.msgOna)}" placeholder="Escribí lo que quieras">
@@ -1143,6 +1144,10 @@ app.onclick = e => {
     case 'mtoday': calAnchor = T.today(); selDay = T.today(); render(); break;
   }
 };
+
+// Hora visible de los campos de hora
+document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('tin')) { const v = t.parentNode.querySelector('.tval'); if (v) v.textContent = t.value || '--:--'; } });
+document.addEventListener('change', e => { const t = e.target; if (t.classList && t.classList.contains('tin')) { const v = t.parentNode.querySelector('.tval'); if (v) v.textContent = t.value || '--:--'; } });
 
 // Swipe en el calendario
 let tx = null;
