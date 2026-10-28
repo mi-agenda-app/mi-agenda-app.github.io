@@ -277,6 +277,13 @@ input[type=date],input[type=time],input[type=text],input[type=number]{width:100%
 .hint b{font-weight:600}
 
 
+
+/* Botón destacado de la práctica guiada */
+.tourbtn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:var(--text);padding:14px 16px;border-radius:22px;border:1.5px solid var(--accent);background:linear-gradient(135deg,rgba(109,76,255,.14),rgba(164,107,255,.24));-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);-webkit-tap-highlight-color:transparent}
+.tourbtn .ti{flex:0 0 42px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 16px rgba(109,76,255,.35)}
+.tourbtn .ti svg{width:18px;height:18px;margin-left:2px}
+.tourbtn b{display:block;font-size:16.5px;font-weight:600}
+.tourbtn span{display:block;font-size:13.5px;color:var(--sub);margin-top:1px}
 /* Mikvaot */
 .mk-country{font-size:13px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin:18px 4px 6px}
 .mk-city{font-size:14px;font-weight:600;color:var(--accent);margin:12px 4px 4px}
@@ -386,6 +393,8 @@ function onaBlock(o, past){
     </div></div>`;
 }
 
+const tourBtn = (style) => `<button class="tourbtn" data-act="tour" style="${style || ''}"><i class="ti"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg></i><div><b>Cómo se usa la app</b><span>Práctica guiada · 2 minutos</span></div></button>`;
+const tourDone = () => { try { return localStorage.getItem('tour.done') === '1'; } catch (e) { return false; } };
 // ---------------- Pantalla: Hoy ----------------
 function viewHoy(){
   const cy = sorted(), t = T.today(), st = T.status(cy, S.settings, t);
@@ -397,7 +406,7 @@ function viewHoy(){
       <p>Registrá cuándo empezó el período y la app calcula el hefsek tahará, la shivá nekiím, la noche de mikve y las onot perishá, con fecha hebrea y gregoriana.</p>
     </div>
     <button class="btn primary" data-act="new">${ICON.plus} Registrar inicio del período</button>
-    ${TOUR ? '' : `<button class="btn glass" data-act="tour">Ver cómo se usa · práctica guiada</button>`}
+    ${TOUR ? '' : tourBtn('margin-top:12px')}
     <div class="privacy" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.</span></div>`;
     return h;
   }
@@ -445,6 +454,7 @@ function viewHoy(){
   if (st.phase !== 'nida') h += onotCard(cy, t);
   if (st.phase === 'tehora' || st.phase === 'mikvePending')
     h += `<button class="btn primary" data-act="new" style="margin-top:6px">${ICON.drop} Registrar nuevo período</button>`;
+  if (!TOUR && !tourDone()) h += tourBtn('margin-top:16px');
   return h;
 }
 
@@ -639,7 +649,7 @@ function render(){
     <div class="date"><b>${fLong(t)}</b><br>${T.hebLabel(t)} · <span class="he">${hebHe(t)}</span></div>
     ${tab === 'hoy' || tab === 'cal' ? `<div class="suntimes"><span class="st-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 6.5 12 4l2.5 2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Amanecer <b>${amanecer(t)}</b></span><span class="st-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 5.5 12 8l2.5-2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Shekiá <b>${shkia(t)}</b></span></div>` : ''}</div></header>` +
     (tab==='hoy' ? viewHoy() : tab==='cal' ? viewCal() : tab==='notif' ? viewNotif() : tab==='ajustes' ? viewAjustes() : viewHist()) +
-    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? `<div id="verTap" style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px;padding:6px">versión 38${mkOn() && !MK_PUBLIC ? ' · vista previa de mikvaot' : ''}</div>` : '') +
+    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? `<div id="verTap" style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px;padding:6px">versión 39${mkOn() && !MK_PUBLIC ? ' · vista previa de mikvaot' : ''}</div>` : '') +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint)">Cálculos orientativos. Ante cualquier duda, consultá con tu rav.</p>` +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint);line-height:1.6">Leiluy Nishmat:</p>` +
     `<div class="hint" style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin:2px 10px 0;font-size:12px;color:var(--faint);line-height:1.6;text-align:center">
@@ -1091,7 +1101,7 @@ function wireNotif(root){
 function viewAjustes(){
   const st = S.settings;
   return `<div class="fade">
-    <button class="btn glass" data-act="tour" style="margin:0 0 ${mkOn() ? 10 : 16}px">Cómo se usa la app · práctica guiada</button>
+    ${tourBtn('margin:0 0 ' + (mkOn() ? 10 : 16) + 'px')}
     ${mkOn() ? `<button class="btn glass" data-act="mikvaot" style="margin:0 0 16px">${ICON.wave} Mikvaot · direcciones y teléfonos</button>` : ''}
     <p class="lead" style="margin:0 4px 4px;color:var(--sub)">Definilos con tu rav según el minhag que siguen.</p>
     <label class="f">Días mínimos hasta el hefsek</label>
@@ -1286,6 +1296,7 @@ function startTour(){
 }
 function endTour(){
   if (!TOUR) return;
+  try { localStorage.setItem('tour.done', '1'); } catch (e) {}
   cancelAnimationFrame(tourRaf);
   document.removeEventListener('click', tourGuard, true);
   tourEls.spot.remove(); tourEls.bub.remove(); tourEls = null;
