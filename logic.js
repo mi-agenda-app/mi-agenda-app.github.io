@@ -126,11 +126,42 @@
     let khd = null, note;
     if (K.type === 'jodesh') {
       for (let i = 1; i <= 35; i++) { const d = add(hd, i); const h = heb(d); if (h.day === K.value && (h.key !== heb(hd).key || heb(hd).day < K.value)) { khd = d; break; } }
+      // si esa fecha ya pasó sin que venga, la oná del kavúa pasa al mes siguiente
+      for (let g = 0; khd && diff(khd, today()) < 0 && g < 24; g++) {
+        let nx = null;
+        for (let i = 1; i <= 35; i++) { const d = add(khd, i), h = heb(d); if (h.day === K.value && h.key !== heb(khd).key) { nx = d; break; } }
+        if (!nx) break; khd = nx;
+      }
       if (!khd) note = 'El mes siguiente no tiene día ' + K.value + '. Consultá con el rav.';
     } else khd = add(hd, K.value);
     const prev = cycles[cycles.length - 2];
     const matches = c.onah === K.onah && (K.type === 'jodesh' ? heb(hd).day === K.value : !!prev && diff(hd, startHd(prev)) === K.value);
     return { o: { kind: 'kavua', kavua: true, label: K.type === 'jodesh' ? 'Veset hajódesh kavúa' : 'Veset haflagá kavúa (' + (K.value + 1) + ' días)', hd: khd, onah: K.onah, note }, matches };
+  }
+
+  // Cuántas veces seguidas no vino en la oná del veset kavúa (desde que se estableció). A las 3, se anula.
+  function kavuaMisses(cycles, K, t) {
+    t = t || today();
+    const last = K.basis[K.basis.length - 1];
+    let m = 0;
+    if (K.type === 'jodesh') {
+      const seen = new Set(cycles.filter(c => c.onah === K.onah).map(startHd));
+      let cur = last;
+      for (let guard = 0; guard < 60; guard++) {
+        let E = null;
+        for (let i = 1; i <= 35; i++) { const d = add(cur, i), h = heb(d); if (h.day === K.value && h.key !== heb(cur).key) { E = d; break; } }
+        if (!E) { cur = add(cur, 29); continue; }
+        if (diff(E, t) >= 0) break;          // todavía no pasó
+        if (seen.has(E)) m = 0; else m++;
+        cur = E;
+      }
+    } else {
+      const after = cycles.filter(c => diff(startHd(c), last) > 0);
+      let prev = last;
+      after.forEach(c => { const h = startHd(c); if (diff(h, prev) === K.value && c.onah === K.onah) m = 0; else m++; prev = h; });
+      if (diff(add(prev, K.value), t) < 0) m++; // pasó la fecha esperada y no vino
+    }
+    return m;
   }
 
   function onot(cycles, st) {
@@ -151,8 +182,9 @@
     }
     // Con veset kavúa: si el último período vino según el patrón, sólo se cuida la oná del kavúa.
     // Si vino en otro día, el kavúa sigue y se suman las onot de ese período.
-    if (st.kavua && st.kavua.on) {
+    if (st.kavua && st.kavua.on && kavuaMisses(cycles, st.kavua) < 3) {
       const k = kavuaOna(cycles, st.kavua);
+      k.o.misses = kavuaMisses(cycles, st.kavua);
       out = k.matches ? [k.o] : [k.o].concat(out.filter(o => !(o.hd && o.hd === k.o.hd && o.onah === k.o.onah)));
     }
     if (st.orZarua) {
@@ -225,5 +257,5 @@
     return m;
   }
 
-  G.TL = { iso, parse, add, diff, today, heb, hebLabel, gematria, sunset, sunrise, DEFAULTS, startHd, onot, detectKavua, kavuaSig, cycleInfo, status, marks };
+  G.TL = { iso, parse, add, diff, today, heb, hebLabel, gematria, sunset, sunrise, DEFAULTS, startHd, onot, detectKavua, kavuaSig, kavuaMisses, cycleInfo, status, marks };
 })(typeof window !== 'undefined' ? window : globalThis);
