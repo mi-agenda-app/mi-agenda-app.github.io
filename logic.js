@@ -102,10 +102,42 @@
   const prevOnah = o => o.onah === 'day' ? { hd: o.hd, onah: 'night' } : { hd: add(o.hd, -1), onah: 'day' };
 
   // cycles ordenados por fecha ascendente
+  // ---------- Veset kavúa ----------
+  // Detecta un patrón de 3 veces seguidas: mismo día del mes hebreo (veset hajódesh)
+  // o mismo intervalo (veset haflagá, hacen falta 4 períodos). Siempre en la misma oná.
+  function detectKavua(cycles) {
+    const n = cycles.length;
+    if (n < 3) return null;
+    const hds = cycles.map(startHd);
+    const L = cycles.slice(-3), H = hds.slice(-3), d0 = heb(H[0]).day;
+    const sameOnah = arr => arr.every(c => c.onah === arr[0].onah);
+    const g1 = diff(H[1], H[0]), g2 = diff(H[2], H[1]);
+    if (H.every(h => heb(h).day === d0) && sameOnah(L) && g1 >= 25 && g1 <= 35 && g2 >= 25 && g2 <= 35)
+      return { type: 'jodesh', value: d0, onah: L[0].onah, basis: H };
+    if (n >= 4) {
+      const H4 = hds.slice(-4), a = diff(H4[1], H4[0]), b = diff(H4[2], H4[1]), c = diff(H4[3], H4[2]);
+      if (a === b && b === c && a >= 14 && sameOnah(L)) return { type: 'haflaga', value: a, onah: L[0].onah, basis: H4 };
+    }
+    return null;
+  }
+  const kavuaSig = k => k ? k.type + ':' + k.value + ':' + k.onah : '';
+  function kavuaOna(cycles, K) {
+    const c = cycles[cycles.length - 1], hd = startHd(c);
+    let khd = null, note;
+    if (K.type === 'jodesh') {
+      for (let i = 1; i <= 35; i++) { const d = add(hd, i); const h = heb(d); if (h.day === K.value && (h.key !== heb(hd).key || heb(hd).day < K.value)) { khd = d; break; } }
+      if (!khd) note = 'El mes siguiente no tiene día ' + K.value + '. Consultá con el rav.';
+    } else khd = add(hd, K.value);
+    const prev = cycles[cycles.length - 2];
+    const matches = c.onah === K.onah && (K.type === 'jodesh' ? heb(hd).day === K.value : !!prev && diff(hd, startHd(prev)) === K.value);
+    return { o: { kind: 'kavua', kavua: true, label: K.type === 'jodesh' ? 'Veset hajódesh kavúa' : 'Veset haflagá kavúa (' + (K.value + 1) + ' días)', hd: khd, onah: K.onah, note }, matches };
+  }
+
   function onot(cycles, st) {
     st = Object.assign({}, DEFAULTS, st);
     if (!cycles.length) return [];
-    const c = cycles[cycles.length - 1], hd = startHd(c), out = [];
+    const c = cycles[cycles.length - 1], hd = startHd(c);
+    let out = [];
     out.push({ kind: 'beinonit', label: 'Oná benonit (día 30)', hd: add(hd, 29), onah: c.onah });
     if (st.day31) out.push({ kind: 'beinonit31', label: 'Día 31', hd: add(hd, 30), onah: c.onah });
     const ch = sameHebDayNextMonth(hd);
@@ -116,6 +148,12 @@
       out.push({ kind: 'haflaga', label: 'Veset haflagá (' + (gap + 1) + ' días)', hd: add(hd, gap), onah: c.onah, interval: gap + 1 });
     } else {
       out.push({ kind: 'haflaga', label: 'Veset haflagá', hd: null, note: 'Se calcula cuando cargues el segundo período.' });
+    }
+    // Con veset kavúa: si el último período vino según el patrón, sólo se cuida la oná del kavúa.
+    // Si vino en otro día, el kavúa sigue y se suman las onot de ese período.
+    if (st.kavua && st.kavua.on) {
+      const k = kavuaOna(cycles, st.kavua);
+      out = k.matches ? [k.o] : [k.o].concat(out.filter(o => !(o.hd && o.hd === k.o.hd && o.onah === k.o.onah)));
     }
     if (st.orZarua) {
       out.filter(o => o.hd && o.kind !== 'beinonit31').forEach(o => {
@@ -187,5 +225,5 @@
     return m;
   }
 
-  G.TL = { iso, parse, add, diff, today, heb, hebLabel, gematria, sunset, sunrise, DEFAULTS, startHd, onot, cycleInfo, status, marks };
+  G.TL = { iso, parse, add, diff, today, heb, hebLabel, gematria, sunset, sunrise, DEFAULTS, startHd, onot, detectKavua, kavuaSig, cycleInfo, status, marks };
 })(typeof window !== 'undefined' ? window : globalThis);
