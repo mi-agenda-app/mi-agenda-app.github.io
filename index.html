@@ -196,6 +196,7 @@ header.top{display:flex;align-items:flex-start;justify-content:space-between;mar
 .cc .gn{font-size:20px;font-weight:600;margin-top:9px;width:33px;height:33px;display:grid;place-items:center;border-radius:50%;font-variant-numeric:tabular-nums}
 .cc .hd{font-size:12px;color:var(--sub);margin-top:-1px;display:flex;align-items:center;gap:2px}
 .cc .hn{position:absolute;bottom:7px;font-size:11px;color:var(--faint);display:flex;align-items:center;gap:2px}
+.cc .hn.sep::before{content:"";position:absolute;left:50%;top:-5px;width:24px;margin-left:-12px;border-top:1px solid currentColor;opacity:.35}
 .cc .mi{width:10px;height:10px;color:var(--ona)}
 .cc.out{opacity:.25}
 .cc.today .gn{position:relative;color:var(--text)!important;font-weight:600}
@@ -596,7 +597,7 @@ function viewCal(){
       return `<div class="${cls}" data-act="sel" data-d="${d}">${x.hefsekFrom && inM ? '<i class="hf"></i>' : ''}
         <span class="gn" style="${fg && d !== t ? 'color:' + fg : ''}">${big}</span>
         <span class="hd">${h.onaTop ? ICON.sun.replace('<svg', '<svg class="mi"') : ''}${small}</span>
-        <span class="hn" style="${nfg ? 'color:' + nfg + ';font-weight:650' : ''}">${h.onaBot ? ICON.moon.replace('<svg', '<svg class="mi"') : ''}${heb ? '' : hn}</span></div>`;
+        <span class="hn${heb ? '' : ' sep'}" style="${nfg ? 'color:' + nfg + ';font-weight:650' : ''}">${h.onaBot ? ICON.moon.replace('<svg', '<svg class="mi"') : ''}${heb ? '' : hn}</span></div>`;
     }).join('');
     rows += `<div class="cr">${segs}${cells}</div>`;
   }
@@ -662,7 +663,7 @@ function render(){
     <div class="date"><b>${fLong(t)}</b><br>${T.hebLabel(t)} · <span class="he">${hebHe(t)}</span></div>
     ${tab === 'hoy' || tab === 'cal' ? `<div class="suntimes"><span class="st-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 6.5 12 4l2.5 2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Amanecer <b>${amanecer(t)}</b></span><span class="st-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0M2.5 18h19M12 4v4M9.5 5.5 12 8l2.5-2.5M5 11l1.4 1.4M19 11l-1.4 1.4"/></svg>Shekiá <b>${shkia(t)}</b></span></div>` : ''}</div></header>` +
     (tab==='hoy' ? viewHoy() : tab==='cal' ? viewCal() : tab==='notif' ? viewNotif() : tab==='ajustes' ? viewAjustes() : viewHist()) +
-    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? `<div id="verTap" style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px;padding:6px">versión 45${mkOn() && !MK_PUBLIC ? ' · vista previa' : ''}</div>` : '') +
+    (tab !== 'hoy' || S.cycles.length ? `<div class="privacy" style="margin:26px auto 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Tus datos quedan guardados sólo en este teléfono.${pushOn() ? '<small>Para los avisos sólo se envía la hora y el texto que elegiste.</small>' : ''}</span></div>` : '') + (tab === 'ajustes' ? `<div id="verTap" style="text-align:center;font-size:11px;color:var(--sub);margin-top:10px;padding:6px">versión 46${mkOn() && !MK_PUBLIC ? ' · vista previa' : ''}</div>` : '') +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint)">Cálculos orientativos. Ante cualquier duda, consultá con tu rav.</p>` +
     `<p class="hint" style="text-align:center;margin:14px 10px 0;font-size:12px;color:var(--faint);line-height:1.6">Leiluy Nishmat:</p>` +
     `<div class="hint" style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin:2px 10px 0;font-size:12px;color:var(--faint);line-height:1.6;text-align:center">
