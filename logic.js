@@ -237,7 +237,9 @@
     const m = {}, at = s => (m[s] = m[s] || { onot: [] });
     cycles.forEach((c, idx) => {
       const ci = cycleInfo(c, st), last = idx === cycles.length - 1;
-      const end = c.hefsek || (last ? (diff(t, ci.earliestHefsek) > 0 ? t : ci.earliestHefsek) : add(ci.hd, 6));
+      // Sin hefsek marcado: la nidá se muestra como mucho hasta el día 16 (muchas no marcan el hefsek ni la mikve)
+      let end = c.hefsek || (last ? (diff(t, ci.earliestHefsek) > 0 ? t : ci.earliestHefsek) : add(ci.hd, 6));
+      if (!c.hefsek && diff(end, add(ci.hd, 15)) > 0) end = add(ci.hd, 15);
       for (let s = c.onset; diff(end, s) >= 0; s = add(s, 1)) {
         at(s).nida = true;
         if (!c.hefsek && diff(s, t) > 0) at(s).projected = true;
